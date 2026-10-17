@@ -201,3 +201,23 @@ Built and maintained by [@mbj733](https://github.com/mbj733).
 ## License
 
 MIT.
+
+## Models
+
+With a DeepSeek account sign-in, the API exposes exactly these models (checked
+`GET https://api.deepseek.com/models` on 2026-10-18):
+
+| id | name |
+|---|---|
+| `deepseek-flash` | DeepSeek-Flash (default here) |
+| `deepseek-v4-pro` | DeepSeek-V4-Pro |
+
+Switch without editing the overlay:
+
+```bash
+export DSH_SUBAGENT_MODEL=deepseek-v4-pro
+```
+
+Provider-specific ids (for example opencode's `deepseek-v4.1-flash`) are **not** valid on the
+DeepSeek account provider — pointing at one requires that provider's key and `base_url` on the
+`dsh-subagent` profile.

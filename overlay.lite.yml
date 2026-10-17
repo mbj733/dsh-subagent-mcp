@@ -13,11 +13,17 @@
 - id: deepseek-account
   disabled: false
 
-# Change this block if you do not sign in with a DeepSeek account.
+# Model route. With a DeepSeek account sign-in these are the models the API lists
+# (verified 2026-10-18 against https://api.deepseek.com/models):
+#   deepseek-flash   → DeepSeek-Flash
+#   deepseek-v4-pro  → DeepSeek-V4-Pro
+# Override without editing this file: set DSH_SUBAGENT_MODEL.
+# Note: opencode-style ids such as deepseek-v4.1-flash belong to a different provider
+# line; pointing at them here requires that provider's key and base_url on this profile.
 - id: agent-default-model
   config:
     provider: deepseek-account
-    model: deepseek-flash
+    model: !!js "process.env.DSH_SUBAGENT_MODEL || 'deepseek-flash'"
     reasoningEffort: max
 
 # Extra skill roots. Remove this block when your skills already live in
