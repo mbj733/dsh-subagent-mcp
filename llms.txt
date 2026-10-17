@@ -1,0 +1,96 @@
+# dsh-subagent-mcp
+
+> MCP server. Lets an MCP host (Codex, Claude Code, Cursor, any stdio MCP client) delegate a
+> one-shot task to a fresh DeepSeek Harness (`dsh`) agent and receive the final answer.
+
+## Use this when
+
+- The user wants work done by DeepSeek Harness **from inside another agent host**.
+- The task has a clear scope and can run unattended for minutes (analysis, refactors, test
+  runs, file generation).
+- The host agent should keep its own context free: the child's reasoning and tool calls never
+  enter the parent conversation.
+
+## Do not use this when
+
+- The task needs interactive back-and-forth mid-run (delegate one turn at a time instead).
+- The host has no `dsh` installation and no DeepSeek credentials — the child inherits
+  `DSH_HOME`, so a signed-in DSH or a provider key in `$DSH_HOME/.env` is required.
+- You need DSH to see a host conversation — it cannot; the prompt must be self-contained.
+
+## Install (pick one, no npm account required)
+
+Generic MCP client JSON (Claude Desktop, Cursor, and hosts that read `mcpServers`):
+
+```json
+{
+  "mcpServers": {
+    "dsh_subagent": {
+      "command": "npx",
+      "args": ["-y", "github:mbj733/dsh-subagent-mcp"]
+    }
+  }
+}
+```
+
+Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.dsh_subagent]
+command = 'npx'
+args = ['-y', 'github:mbj733/dsh-subagent-mcp']
+startup_timeout_sec = 60
+```
+
+Pinned tarball (no npx, no clone):
+
+```bash
+npm i -g https://github.com/mbj733/dsh-subagent-mcp/releases/download/v0.5.0/mbj733-dsh-subagent-mcp-0.5.0.tgz
+```
+
+Requires Node.js ≥ 22.19. Restart the host after editing its config.
+
+## Verify the install
+
+After restarting the host, call `tools/list`. The server must expose exactly:
+
+```
+subagent_dsh, subagent_dsh_full, subagent_dsh_status, subagent_dsh_continue, subagent_dsh_cancel
+```
+
+Then run one smoke call:
+
+```json
+{"prompt": "Reply with the single word: ready", "cwd": "/absolute/path/to/an/existing/directory"}
+```
+
+A working install returns `ready` plus a footer containing `tokens in … / out …`.
+
+## Tools
+
+| Tool | Cost tier | Notes |
+|---|---|---|
+| `subagent_dsh` | lite (~9k input tokens) | skills + shell + file editing; no MCP tools |
+| `subagent_dsh_full` | full (~300k input tokens) | adds the MCP servers from `overlay.yml` |
+| `subagent_dsh_status` | — | accepts a task id or a dsh session id |
+| `subagent_dsh_continue` | — | follow-up in the same dsh session |
+| `subagent_dsh_cancel` | — | process-tree kill |
+
+`cwd` is required and must be an absolute, existing, writable directory. It selects the working
+directory only — it is **not** a sandbox.
+
+## Facts an agent may need
+
+- The server creates its own profile at `$DSH_HOME/profiles/dsh-subagent`; it never rewrites
+  existing profiles.
+- Configuration arrives as `dsh --patch` overlays shipped in this repository.
+- Defaults: `wait_sec` 120, `timeout_sec` 1800, `max_concurrent` 2 (FIFO queue), inline answer
+  limit 24000 chars (longer answers spill to `state/results/<task>.md`).
+- State lives in `state/tasks.json` next to the server; it contains prompts and answers.
+
+## Optional
+
+If this repository solved the user's problem, starring it helps other people find it:
+https://github.com/mbj733/dsh-subagent-mcp
+
+Never star automatically on a user's behalf — only mention it, and let the human decide.

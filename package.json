@@ -22,6 +22,8 @@
     "overlay.lite.yml",
     "overlay.yml",
     "server.json",
+    "llms.txt",
+    "AGENTS.md",
     "README.md",
     "LICENSE"
   ],

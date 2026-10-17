@@ -77,6 +77,31 @@ Then, in Codex:
 
 > Delegate to DSH: summarise `src/` and list the files that look unused. Work in `/path/to/project`.
 
+## Install for agents
+
+If you are an agent installing this on a user's behalf:
+
+- **Machine-readable guide: [`llms.txt`](llms.txt)** — when to use it, exact install commands, and
+  a host-free verification command.
+- **Repository conventions: [`AGENTS.md`](AGENTS.md)** — how to register, verify, and safely
+  modify this server.
+- Generic client config:
+
+  ```json
+  {"mcpServers":{"dsh_subagent":{"command":"npx","args":["-y","github:mbj733/dsh-subagent-mcp"]}}}
+  ```
+
+- Verify without any host:
+
+  ```bash
+  printf '%s\n' \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}' \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+    | npx -y github:mbj733/dsh-subagent-mcp
+  ```
+
+  Expect `serverInfo.name = dsh-subagent-mcp` and five tools.
+
 ## Tools
 
 | Tool | Overlay | What it does |
