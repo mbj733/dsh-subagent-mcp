@@ -3,3 +3,4 @@ state/
 *.log
 .env
 .DS_Store
+*.tgz
