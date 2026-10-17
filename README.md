@@ -212,6 +212,13 @@ With a DeepSeek account sign-in, the API exposes exactly these models (checked
 | `deepseek-flash` | DeepSeek-Flash (default here) |
 | `deepseek-v4-pro` | DeepSeek-V4-Pro |
 
+**Default preset: DeepSeek-V4.1-Flash at reasoning effort `max`.** In ids that is
+`model: deepseek-flash` + `reasoningEffort: max`, which is exactly what both overlays ship.
+Confirm on a machine with:
+
+```bash
+dsh --profile dsh-subagent --patch overlay.lite.yml --dump-config | grep -A4 agent-default-model
+```
 > Display names differ from ids: the DSH desktop renders model id `deepseek-flash` as
 > **DeepSeek-V4.1-Flash** on the `deepseek-account` / `deepseek-official` providers. Same model,
 > different label — pin `deepseek-flash`, not the display name.
