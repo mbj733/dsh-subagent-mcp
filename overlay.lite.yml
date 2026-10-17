@@ -1,0 +1,32 @@
+# Lite overlay — credentials, model route and skill roots only.
+#
+# Used as: dsh --profile <profile> --patch <this file> --json
+# No MCP servers are mounted, so each delegated run costs roughly 9k input
+# tokens instead of ~300k. Enough for shell work, file editing and every skill.
+
+# The shipped headless profile disables the managed credential store, so a GUI
+# sign-in would otherwise be ignored. Re-enable it for this run only.
+- id: credentials
+  disabled: false
+- id: authorization
+  disabled: false
+- id: deepseek-account
+  disabled: false
+
+# Change this block if you do not sign in with a DeepSeek account.
+- id: agent-default-model
+  config:
+    provider: deepseek-account
+    model: deepseek-flash
+    reasoningEffort: max
+
+# Extra skill roots. Remove this block when your skills already live in
+# $DSH_HOME/skills or ~/.agents/skills, which every profile reads already.
+- insert:
+    - id: skills-from-codex
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: codex-skills
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.env.USERPROFILE ? process.env.USERPROFILE + '\\\\.codex\\\\skills' : process.env.HOME + '/.codex/skills'"

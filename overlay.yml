@@ -1,0 +1,79 @@
+# Full overlay — same as overlay.lite.yml plus MCP servers.
+#
+# Mounting MCP servers adds their tool definitions to every prompt: with a
+# dozen servers this reaches ~300k input tokens per delegated run, so use the
+# lite overlay unless the task genuinely needs those tools.
+#
+# Every credential comes from the environment. Export them before starting the
+# MCP host, or drop the server you do not need.
+
+- id: credentials
+  disabled: false
+- id: authorization
+  disabled: false
+- id: deepseek-account
+  disabled: false
+
+- id: agent-default-model
+  config:
+    provider: deepseek-account
+    model: deepseek-flash
+    reasoningEffort: max
+
+- insert:
+    - id: skills-from-codex
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      config:
+        providerName: codex-skills
+        includeDefaultRoots: false
+        customSkillDirs:
+          - !!js "process.env.USERPROFILE ? process.env.USERPROFILE + '\\\\.codex\\\\skills' : process.env.HOME + '/.codex/skills'"
+
+# ---------- remote (streamable HTTP) servers ----------
+- insert:
+    - id: mcp-firecrawl
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: firecrawl
+        transport: streamable-http
+        url: 'https://mcp.firecrawl.dev/v2/mcp'
+        headers:
+          Authorization: !!js '`Bearer ${process.env.FIRECRAWL_API_KEY || ""}`'
+        failOnStartupError: false
+
+    - id: mcp-githubcopilot
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: githubcopilot
+        transport: streamable-http
+        url: 'https://api.githubcopilot.com/mcp/'
+        headers:
+          Authorization: !!js '`Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN || ""}`'
+        failOnStartupError: false
+
+    - id: mcp-amap
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: amap
+        transport: streamable-http
+        url: !!js '`https://mcp.amap.com/mcp?key=${process.env.AMAP_API_KEY || ""}`'
+        failOnStartupError: false
+
+# ---------- local (stdio) servers ----------
+# Copy a block, point `command`/`args` at your own install and uncomment it.
+# `cwd` matters for servers that resolve assets relative to the working
+# directory, and `env` is where you pass keys to a local process.
+#
+# - insert:
+#     - id: mcp-example-stdio
+#       name: '@deepseek-ai/dsh-mcp-client'
+#       config:
+#         serverName: example
+#         transport: stdio
+#         command: 'node'
+#         args: ['/absolute/path/to/server.js']
+#         cwd: '/absolute/path/to/working/dir'
+#         env:
+#           SOME_API_KEY: !!js 'process.env.SOME_API_KEY || ""'
+#         toolCallTimeoutMs: 600000
+#         failOnStartupError: false
