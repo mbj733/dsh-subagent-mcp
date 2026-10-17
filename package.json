@@ -1,10 +1,18 @@
 {
-  "name": "dsh-subagent-mcp",
+  "name": "@mbj733/dsh-subagent-mcp",
   "version": "0.5.0",
   "type": "module",
   "description": "MCP server that lets any MCP host (Codex, Claude Code, ...) delegate a one-shot task to a fresh DeepSeek Harness agent with the user's native configuration.",
   "author": "mbj733 (https://github.com/mbj733)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbj733/dsh-subagent-mcp.git"
+  },
+  "homepage": "https://github.com/mbj733/dsh-subagent-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/mbj733/dsh-subagent-mcp/issues"
+  },
   "bin": {
     "dsh-subagent-mcp": "index.mjs"
   },
@@ -13,7 +21,9 @@
     "notify-hook.mjs",
     "overlay.lite.yml",
     "overlay.yml",
-    "README.md"
+    "server.json",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22.19.0"
@@ -21,11 +31,15 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
+    "deepseek",
     "deepseek-harness",
     "dsh",
     "subagent",
     "codex"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@deepseek-ai/dsh": "0.2.1-rc.2"
   }

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.mbj733/dsh-subagent-mcp",
+  "description": "Delegate a one-shot task to a fresh DeepSeek Harness (dsh) agent from any MCP host. Inherits the user's AGENTS.md, skills and sign-in; two explicit cost tiers (lite ~9k tokens, full ~300k).",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/mbj733/dsh-subagent-mcp",
+    "source": "github"
+  },
+  "version": "0.5.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@mbj733/dsh-subagent-mcp",
+      "version": "0.5.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "npx",
+      "environmentVariables": [
+        {
+          "name": "DSH_HOME",
+          "description": "Optional. Path to the DSH home directory that holds AGENTS.md, skills and credentials. Defaults to ~/.dsh.",
+          "isRequired": false
+        },
+        {
+          "name": "DSH_SUBAGENT_MAX_CONCURRENCY",
+          "description": "Optional. Maximum concurrent delegated runs. Defaults to 2.",
+          "isRequired": false
+        },
+        {
+          "name": "DSH_SUBAGENT_TIMEOUT_SEC",
+          "description": "Optional. Default hard timeout per run in seconds. Defaults to 1800.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
