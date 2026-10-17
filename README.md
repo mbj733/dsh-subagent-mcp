@@ -32,6 +32,29 @@ Codex / Claude Code / any MCP client
   your project directory · one turn · final answer
 ```
 
+## Compared with other bridges in this space
+
+Bridges between agent hosts and DeepSeek Harness come in three shapes: a **resident daemon** that
+keeps agents alive and calls back into the host, an **SDK bridge** that runs workers in git
+worktrees, and a **relay** that exposes an already-running DSH instance. This package is the
+fourth: a **stateless one-shot bridge**. Where it wins, and where it deliberately loses:
+
+| Dimension | This package | Typical alternative | Why it matters |
+|---|---|---|---|
+| **Runtime dependencies** | **Zero** — only `dsh` itself | `ws` + `@modelcontextprotocol/sdk` + `zod`, or a chain of SDK packages | A ~600-line single file is auditable in one sitting and cannot break because a transitive dep changed |
+| **Your DSH profile** | **Never touched** — config arrives as `--patch` overlays | Written into the profile, or requires a plugin on the DSH side | Upgrading DSH can't collide with a bridge that wrote itself into your config |
+| **Per-call cost** | **Two explicit tiers**: ≈9k or ≈300k tokens | One implicit size you discover on the bill | You choose the cost before the run |
+| **Lifetime** | One process per task, then exit | Resident daemon / worker pool | Nothing runs in the background; a crash can't poison the next task |
+| **Orphan processes** | Process-**tree** kill on cancel and shutdown | Sometimes leaves the MCP children `dsh` spawned | No slow memory drain after a few cancelled runs |
+| **Config inheritance** | Real `DSH_HOME` → your skills, `AGENTS.md`, sign-in | Some runtimes get an isolated temporary `DSH_HOME` (an empty shell) | The child actually behaves like the DSH you configured |
+| **Install** | `npx -y github:…`, no registry account | npm publish only | One config block, works today |
+| **Cold start** | ≈1.7 s per delegation ⚠️ | Warm daemon is faster | The honest price of statelessness |
+| **Native callback / session attach** | Not offered — needs host hooks ⚠️ | Daemon bridges call back natively and can attach to running sessions | If you need either, a daemon-shaped bridge is the right tool |
+
+Short version: pick this one when you want **a cheap, auditable, no-moving-parts way to hand work
+to DSH**; pick a daemon-shaped bridge when you want **long-lived agents that wake the host by
+themselves**.
+
 - **Default preset:** DeepSeek-V4.1-Flash (id `deepseek-flash`) at reasoning effort `max`.
 - **Nothing to configure:** the first call creates its own `dsh-subagent` profile from the shipped
   headless template.
