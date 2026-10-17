@@ -7,43 +7,32 @@
 
 # dsh-subagent-mcp
 
-**Let Codex (or any MCP host) hand a task to a fresh DeepSeek Harness agent — with your
-skills, your `AGENTS.md`, in the project directory you name — and get the answer back.**
+**Let Codex — or any MCP host — hand a task to a fresh DeepSeek Harness agent that already has
+your skills, your `AGENTS.md` and your sign-in, working in the project directory you name.**
 
-One process, one turn, one answer. No daemon, no dependencies, no changes to your DSH profile.
+One process, one turn, one answer. No daemon, no runtime dependencies, no edits to your DSH profile.
 
 ```text
 Codex / Claude Code / any MCP client
         │  MCP over stdio
         ▼
-  dsh-subagent-mcp                        ← this package, ~600 lines, zero deps
+  dsh-subagent-mcp                     ← ~600 lines, zero dependencies
         │  spawn: dsh --profile <p> --patch <overlay> --json
         ▼
-  DeepSeek Harness (headless)
-        │  inherits DSH_HOME → AGENTS.md, skills, sign-in
+  DeepSeek Harness (headless)          ← inherits DSH_HOME: AGENTS.md, skills, sign-in
         ▼
-  your project directory, one turn, final answer
+  your project directory · one turn · final answer
 ```
 
-## Why this exists
+- **Default preset:** DeepSeek-V4.1-Flash (id `deepseek-flash`) at reasoning effort `max`.
+- **Nothing to configure:** the first call creates its own `dsh-subagent` profile from the shipped
+  headless template.
 
-A DSH agent is one process with one context. When another agent needs DSH's skills,
-filesystem access or long-running turns, driving it through a GUI costs a screen or DOM
-round-trip per step. This bridge replaces that with one tool call.
-
-Three design choices follow from that:
-
-| Choice | Why it matters |
-|---|---|
-| **Stateless per call** | Every delegation is a new process and exactly one turn. Nothing to supervise, nothing to leak between tasks. |
-| **Overlay, not profile surgery** | Configuration arrives as `dsh --patch` layers, so your existing profiles are never rewritten. |
-| **Two explicit cost tiers** | `lite` ≈ 9k input tokens, `full` ≈ 300k. The caller picks, instead of discovering it on the bill. |
-
-## Quick start
+## Install
 
 Requires Node.js ≥ 22.19. The bundled dependency provides the `dsh` CLI.
 
-**Option A — straight from GitHub (no clone, no build):**
+**A · straight from GitHub** — no clone, no build, no npm account:
 
 ```toml
 # ~/.codex/config.toml
@@ -53,61 +42,36 @@ args = ['-y', 'github:mbj733/dsh-subagent-mcp']
 startup_timeout_sec = 60
 ```
 
-**Option B — clone, inspect, run locally:**
+**B · pinned tarball**
+
+```bash
+npm i -g https://github.com/mbj733/dsh-subagent-mcp/releases/download/v0.5.0/mbj733-dsh-subagent-mcp-0.5.0.tgz
+```
+
+**C · clone** (when you want to read or patch the code)
 
 ```bash
 git clone https://github.com/mbj733/dsh-subagent-mcp
-cd dsh-subagent-mcp
-npm install
+cd dsh-subagent-mcp && npm install
 ```
 
 ```toml
-# ~/.codex/config.toml
 [mcp_servers.dsh_subagent]
 command = 'node'
 args = ['/absolute/path/to/dsh-subagent-mcp/index.mjs']
 startup_timeout_sec = 30
 ```
 
-Either way, restart the host afterwards. On first use the server creates its own profile at
-`$DSH_HOME/profiles/dsh-subagent` from the shipped headless template — it does not touch
-`profiles/desktop` or any other profile you already have.
-
-Then, in Codex:
+Restart the host afterwards. Then just ask:
 
 > Delegate to DSH: summarise `src/` and list the files that look unused. Work in `/path/to/project`.
-
-## Install for agents
-
-If you are an agent installing this on a user's behalf:
-
-- **Machine-readable guide: [`llms.txt`](llms.txt)** — when to use it, exact install commands, and
-  a host-free verification command.
-- **Repository conventions: [`AGENTS.md`](AGENTS.md)** — how to register, verify, and safely
-  modify this server.
-- Generic client config:
-
-  ```json
-  {"mcpServers":{"dsh_subagent":{"command":"npx","args":["-y","github:mbj733/dsh-subagent-mcp"]}}}
-  ```
-
-- Verify without any host:
-
-  ```bash
-  printf '%s\n' \
-    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}' \
-    '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-    | npx -y github:mbj733/dsh-subagent-mcp
-  ```
-
-  Expect `serverInfo.name = dsh-subagent-mcp` and five tools.
 
 ## Tools
 
 | Tool | Overlay | What it does |
 |---|---|---|
-| `subagent_dsh` | lite | Delegate a task. Skills, shell, file editing, web search — no MCP tools. ≈9k input tokens. |
-| `subagent_dsh_full` | full | Same, plus the MCP servers declared in `overlay.yml`. ≈300k input tokens with a dozen servers. |
+| `subagent_dsh` | lite | Delegate a task: skills, shell, file editing, web search — no MCP tools. ≈9k input tokens. |
+| `subagent_dsh_full` | full | Same, plus every MCP server declared in `overlay.yml`. ≈300k input tokens with a dozen servers. |
 | `subagent_dsh_status` | — | Collect a task. Accepts a task id (`t-…`) **or** a dsh session id. |
 | `subagent_dsh_continue` | — | Follow-up in the same dsh session; `cwd`/`overlay` default to the remembered values. |
 | `subagent_dsh_cancel` | — | Kill a running or queued task and its whole process tree. |
@@ -117,26 +81,65 @@ If you are an agent installing this on a user's behalf:
 | `prompt` | — | Required. The child cannot see the host conversation — include everything it needs. |
 | `cwd` | — | Required. Absolute project directory. **Not a sandbox** (see Security). |
 | `wait_sec` | 120 | Wait before returning a task id. `0` returns immediately. |
-| `timeout_sec` | 1800 | Hard limit; on expiry the process tree is killed and partial output is returned. |
+| `timeout_sec` | 1800 | Hard limit; on expiry the tree is killed and partial output returned. |
 | `read_only` | false | Ask the child to make no filesystem changes (instruction + detection, not a kernel sandbox). |
-| `format` | text | `json` returns `{ok, state, answer, usage, meta}` for programmatic use. |
+| `format` | text | `json` returns `{ok, state, answer, usage, meta}`. |
 
-Long tasks are safe by design: the call waits `wait_sec`, then hands back a task id, so a
-host-side tool timeout can never kill the work.
+Long tasks are safe by design: the call waits `wait_sec`, then returns a task id, so a host-side
+tool timeout can never kill the work.
 
-## Cost and capability, measured
+## Model and cost
+
+The child runs **DeepSeek-V4.1-Flash** — model id `deepseek-flash` — at reasoning effort **max**.
+That is what both overlays ship; verify it yourself:
+
+```bash
+dsh --profile dsh-subagent --patch overlay.lite.yml --dump-config | grep -A4 agent-default-model
+```
+
+The account line exposes two ids (checked against `GET https://api.deepseek.com/models`):
+
+| id | displayed as |
+|---|---|
+| `deepseek-flash` | DeepSeek-V4.1-Flash · **default** |
+| `deepseek-v4-pro` | DeepSeek-V4-Pro |
+
+Switch per machine without editing files: `export DSH_SUBAGENT_MODEL=deepseek-v4-pro`.
+
+> Pin the **id**, not the label. Provider-specific ids from other lines — for example opencode's
+> `deepseek-v4.1-flash` — are not valid here; they need that provider's key and `base_url` on the
+> `dsh-subagent` profile.
 
 | Overlay | Mounts | Typical input tokens | Use it for |
 |---|---|---|---|
-| `lite` | credentials + skills | **~9,000** | writing, refactoring, analysis, anything done with shell + files |
+| `lite` | credentials + skills | **~9,000** | writing, refactoring, analysis — anything done with shell and files |
 | `full` | + 11 MCP servers | **~300,000** | tasks that genuinely need PDF/office/browser/GitHub/map tools |
 
 A short `lite` reply, measured end to end: `startup 1.67s · work 1.19s · tokens in 9073 / out 2`.
 
+## Verify an install without a host
+
+```bash
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+  | npx -y github:mbj733/dsh-subagent-mcp
+```
+
+Expect `serverInfo.name = dsh-subagent-mcp` and exactly five tools.
+
+**Installing this for someone else, or as an agent?** Read [`llms.txt`](llms.txt) for the
+machine-readable guide and [`AGENTS.md`](AGENTS.md) for registration rules and repository
+conventions. Generic client config:
+
+```json
+{"mcpServers":{"dsh_subagent":{"command":"npx","args":["-y","github:mbj733/dsh-subagent-mcp"]}}}
+```
+
 ## Optional: report finished tasks back into the host
 
-MCP has no channel for a late result, so long tasks return a task id. On hosts with hooks you
-can close that gap: `notify-hook.mjs` injects any finished task into the next turn.
+MCP has no channel for a late result, so long tasks return a task id. On hosts with hooks,
+`notify-hook.mjs` injects any finished task into the next turn.
 
 ```toml
 # Codex. `type = "command"` is mandatory — a missing type breaks the whole config file.
@@ -150,85 +153,48 @@ timeout = 5
 
 It reads `state/tasks.json`, reports each finished task exactly once, and stays silent otherwise.
 
-## Operational details
+## How it behaves
 
-- **Bounded concurrency** — `DSH_SUBAGENT_MAX_CONCURRENCY` (default 2) with a FIFO queue;
-  extra calls return `queued` plus their position.
-- **Usage reporting** — token counts, tool calls and names, `startup_ms` / `work_ms`,
-  `exit_code`, `error_code` (`TIMEOUT`, `CANCELLED`, `SPAWN_FAILED`, `EMPTY_ANSWER`,
-  `CHILD_EXIT`, `RATE_LIMIT`).
+- **Stateless per call** — a new process and exactly one turn; nothing to supervise, nothing to
+  leak between tasks.
+- **Overlay, not profile surgery** — configuration arrives as `dsh --patch` layers, so your
+  existing profiles are never rewritten.
+- **Bounded concurrency** — `DSH_SUBAGENT_MAX_CONCURRENCY` (default 2) with a FIFO queue; extra
+  calls return `queued` plus their position.
+- **Usage reporting** — tokens, tool calls and names, `startup_ms` / `work_ms`, `exit_code`,
+  `error_code` (`TIMEOUT`, `CANCELLED`, `SPAWN_FAILED`, `EMPTY_ANSWER`, `CHILD_EXIT`, `RATE_LIMIT`).
 - **Oversized answers** — above `DSH_SUBAGENT_INLINE_LIMIT` (default 24000 chars) the full text
   spills to `state/results/<task>.md`; the reply states the percentage shown.
-- **No orphans** — cancellation and shutdown use process-tree kill (`taskkill /T /F` on Windows).
+- **No orphans** — cancellation and shutdown kill the whole process tree.
 
 ## Security
 
-- **`cwd` is not a sandbox.** It selects the working directory only; the child inherits the
-  host user's filesystem and network rights.
+- **`cwd` is not a sandbox.** It selects the working directory only; the child inherits the host
+  user's filesystem and network rights.
 - **`read_only` is advisory.** Enforced by instruction and reported by detection, not by the kernel.
 - The child inherits `DSH_HOME`, so it reads your `AGENTS.md`, skills and stored credentials.
-- No third-party service is contacted beyond the model provider you configured.
+- Nothing is sent anywhere beyond the model provider you configured.
 
-## How this differs from a persistent-agent bridge
+## Differences and limits
 
-This bridge is deliberately **stateless**: a process per task, one turn, then exit. That keeps
-the failure surface small and the billing predictable, but it means:
+Deliberately stateless: a process per task, one turn, then exit. That keeps the failure surface
+small and the billing predictable, and it means there is
 
-- no daemon, no background queue beyond the in-process FIFO;
-- no native "wake the parent when done" callback — that needs host hooks (see above);
-- no way to attach to a DSH session that is already running elsewhere.
+- no daemon and no queue beyond the in-process FIFO;
+- no native "wake the parent when done" callback — that needs host hooks, above;
+- no way to attach to a DSH session already running elsewhere;
+- no streaming and no mid-run questions — use `subagent_dsh_continue` for follow-ups;
+- no visibility from the host into the child's conversation; only the final answer crosses back.
 
-If your workflow needs a resident daemon with native completion callbacks and session attach,
-that is a different design with a different footprint.
-
-## Limitations
-
-- One turn per call; no streaming and no mid-run questions. Use `subagent_dsh_continue` for follow-ups.
-- The host sees only the final answer, never the child's conversation.
-- Several host windows each run their own server instance and share `state/tasks.json`, so hook
-  notifications can duplicate.
+Several host windows each run their own server instance and share `state/tasks.json`, so hook
+notifications can duplicate.
 
 ## Built on
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) — the reverse of
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). This is the reverse of
 [`@deepseek-ai/dsh-subagent-codex`](https://www.npmjs.com/package/@deepseek-ai/dsh-subagent-codex),
-which lets DSH drive a Codex thread. This is the other direction.
+which lets DSH drive a Codex thread.
 
 ## Author
 
-Built and maintained by [@mbj733](https://github.com/mbj733).
-
-## License
-
-MIT.
-
-## Models
-
-With a DeepSeek account sign-in, the API exposes exactly these models (checked
-`GET https://api.deepseek.com/models` on 2026-10-18):
-
-| id | name |
-|---|---|
-| `deepseek-flash` | DeepSeek-Flash (default here) |
-| `deepseek-v4-pro` | DeepSeek-V4-Pro |
-
-**Default preset: DeepSeek-V4.1-Flash at reasoning effort `max`.** In ids that is
-`model: deepseek-flash` + `reasoningEffort: max`, which is exactly what both overlays ship.
-Confirm on a machine with:
-
-```bash
-dsh --profile dsh-subagent --patch overlay.lite.yml --dump-config | grep -A4 agent-default-model
-```
-> Display names differ from ids: the DSH desktop renders model id `deepseek-flash` as
-> **DeepSeek-V4.1-Flash** on the `deepseek-account` / `deepseek-official` providers. Same model,
-> different label — pin `deepseek-flash`, not the display name.
-
-Switch without editing the overlay:
-
-```bash
-export DSH_SUBAGENT_MODEL=deepseek-v4-pro
-```
-
-Provider-specific ids (for example opencode's `deepseek-v4.1-flash`) are **not** valid on the
-DeepSeek account provider — pointing at one requires that provider's key and `base_url` on the
-`dsh-subagent` profile.
+Built and maintained by [@mbj733](https://github.com/mbj733). MIT licensed.
