@@ -7,16 +7,24 @@
 
 # dsh-subagent-mcp
 
-**Let Codex — or any MCP host — hand a task to a fresh DeepSeek Harness agent that already has
-your skills, your `AGENTS.md` and your sign-in, working in the project directory you name.**
+**Give Codex a DeepSeek crew.** One tool call hands a task to a fresh DeepSeek Harness agent that
+already has your skills, your `AGENTS.md` and your sign-in — and it works in the project directory
+you name, then hands back the answer.
 
-One process, one turn, one answer. No daemon, no runtime dependencies, no edits to your DSH profile.
+| What you get | Why it matters |
+|---|---|
+| **≈9k tokens per delegation** | A lite run costs about one file read, not a second conversation. |
+| **V4.1-Flash at reasoning `max`** | The strong preset is the default. Nothing to tune. |
+| **Your skills and `AGENTS.md`** | It behaves like the DSH you configured, because it uses your `DSH_HOME`. |
+| **Long tasks can't be killed by a timeout** | It waits `wait_sec`, then returns a task id you collect later. |
+| **Zero runtime dependencies** | ~600 lines with a hand-rolled JSON-RPC loop. Nothing to audit but the bridge. |
+| **One process, one turn** | No daemon, no state to leak between tasks, no edits to your DSH profile. |
 
 ```text
 Codex / Claude Code / any MCP client
         │  MCP over stdio
         ▼
-  dsh-subagent-mcp                     ← ~600 lines, zero dependencies
+  dsh-subagent-mcp                     ← this package, zero deps
         │  spawn: dsh --profile <p> --patch <overlay> --json
         ▼
   DeepSeek Harness (headless)          ← inherits DSH_HOME: AGENTS.md, skills, sign-in
