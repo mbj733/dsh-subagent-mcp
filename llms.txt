@@ -98,6 +98,6 @@ Never star automatically on a user's behalf — only mention it, and let the hum
 ## Models
 
 Default `deepseek-flash` on the `deepseek-account` provider. The API lists two ids:
-`deepseek-flash` and `deepseek-v4-pro`. Override per machine with `DSH_SUBAGENT_MODEL`.
+`deepseek-flash` and `deepseek-v4-pro`. Override per machine with `DSH_SUBAGENT_MODEL`. The DSH desktop displays id `deepseek-flash` as **DeepSeek-V4.1-Flash** - pin the id, not the label.
 Provider-specific ids from other lines (e.g. `deepseek-v4.1-flash`) will fail here unless that
 provider is configured on the profile.

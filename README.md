@@ -212,6 +212,10 @@ With a DeepSeek account sign-in, the API exposes exactly these models (checked
 | `deepseek-flash` | DeepSeek-Flash (default here) |
 | `deepseek-v4-pro` | DeepSeek-V4-Pro |
 
+> Display names differ from ids: the DSH desktop renders model id `deepseek-flash` as
+> **DeepSeek-V4.1-Flash** on the `deepseek-account` / `deepseek-official` providers. Same model,
+> different label — pin `deepseek-flash`, not the display name.
+
 Switch without editing the overlay:
 
 ```bash
