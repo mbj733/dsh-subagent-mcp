@@ -41,7 +41,19 @@ Three design choices follow from that:
 
 ## Quick start
 
-Requires Node.js ≥ 22.19 and a working `dsh` (the bundled dependency provides it).
+Requires Node.js ≥ 22.19. The bundled dependency provides the `dsh` CLI.
+
+**Option A — straight from GitHub (no clone, no build):**
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.dsh_subagent]
+command = 'npx'
+args = ['-y', 'github:mbj733/dsh-subagent-mcp']
+startup_timeout_sec = 60
+```
+
+**Option B — clone, inspect, run locally:**
 
 ```bash
 git clone https://github.com/mbj733/dsh-subagent-mcp
@@ -49,16 +61,15 @@ cd dsh-subagent-mcp
 npm install
 ```
 
-Register it with your host — **Codex** (`~/.codex/config.toml`):
-
 ```toml
+# ~/.codex/config.toml
 [mcp_servers.dsh_subagent]
 command = 'node'
 args = ['/absolute/path/to/dsh-subagent-mcp/index.mjs']
 startup_timeout_sec = 30
 ```
 
-Restart the host. On first use the server creates its own profile at
+Either way, restart the host afterwards. On first use the server creates its own profile at
 `$DSH_HOME/profiles/dsh-subagent` from the shipped headless template — it does not touch
 `profiles/desktop` or any other profile you already have.
 
