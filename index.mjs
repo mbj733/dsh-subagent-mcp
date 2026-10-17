@@ -405,6 +405,8 @@ function delegateTool(name, overlay) {
         ? 'credentials + skills + the 11 MCP servers (PDF/office/docling/browser/github/firecrawl/amap/codebase-memory/rea/context-mode). Prompt cost ≈300k input tokens per run, so use it only when the task needs those tools.'
         : 'credentials + skills + shell + file editing + web search, but NO MCP tools (no PDF/office/docling/browser/github/amap). Cheap (~9k tokens). Use subagent_dsh_full when those are needed.'} ` +
       `The child cannot see this conversation and cannot ask questions, so the prompt must be self-contained. ` +
+      `Default preset: model id \`deepseek-flash\` (shown as DeepSeek-V4.1-Flash in the DSH UI) at reasoning effort **max**; ` +
+      `set DSH_SUBAGENT_MODEL on the server to change it. ` +
       `cwd is REQUIRED and only selects the working directory (it is not a sandbox). ` +
       `Returns the answer, or a task id when still running after wait_sec (then poll subagent_dsh_status).`,
     inputSchema: {
