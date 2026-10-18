@@ -370,9 +370,18 @@ function render(record, format) {
     return `DSH subagent task ${record.id} was cancelled (${record.error || 'stopped by the caller'}).\n${footer(record)}`
   }
   const partial = String(record.text ?? '').trim()
+  const brokenProfile = /\bfailed to parse overlay\b|YAMLException/i.test(`${record.error ?? ''}\n${record.tail ?? ''}`)
   return [
     `DSH subagent failed: ${record.error}`,
     record.exitCode !== null ? `exit code: ${record.exitCode}` : null,
+    brokenProfile
+      ? [
+          '',
+          '💡 这个错误是 dsh profile 的补丁文件坏了（`cordis.patch.yml` 以 `[]` 开头，后面又被追加了块，整份 YAML 解析失败）。',
+          `   修复：node ${join(HERE, 'repair-profile.mjs')}`,
+          '   它会把当前文件自动备份成 `.bak-<时间戳>`，再写回干净的模板。',
+        ].join('\n')
+      : null,
     partial ? `\n部分输出（失败前已产生）:\n${partial}` : null,
     footer(record),
     record.tail ? `\nstderr (tail):\n${record.tail}` : null,

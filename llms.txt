@@ -101,3 +101,11 @@ Default preset: DeepSeek-V4.1-Flash (id `deepseek-flash`) with `reasoningEffort:
 `deepseek-flash` and `deepseek-v4-pro`. Override per machine with `DSH_SUBAGENT_MODEL`. The DSH desktop displays id `deepseek-flash` as **DeepSeek-V4.1-Flash** - pin the id, not the label.
 Provider-specific ids from other lines (e.g. `deepseek-v4.1-flash`) will fail here unless that
 provider is configured on the profile.
+
+## Failure modes worth knowing
+
+- `failed to parse overlay … YAMLException` → the profile patch at
+  `$DSH_HOME/profiles/dsh-subagent/cordis.patch.yml` has a block appended after its `[]`
+  placeholder. Fix with `node repair-profile.mjs` (it backs the file up first).
+- `unknown prompt variable "{{cwd}}"` → the same file sets a `personaSuffix` with `{{cwd}}`, which
+  unattended profiles do not define. Use `personaPrefix` only.

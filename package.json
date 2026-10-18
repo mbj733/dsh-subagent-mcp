@@ -18,6 +18,7 @@
   },
   "files": [
     "index.mjs",
+    "repair-profile.mjs",
     "notify-hook.mjs",
     "overlay.lite.yml",
     "overlay.yml",

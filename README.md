@@ -229,3 +229,26 @@ which lets DSH drive a Codex thread.
 ## Author
 
 Built and maintained by [@mbj733](https://github.com/mbj733). MIT licensed.
+
+## Troubleshooting
+
+**`failed to parse overlay … YAMLException: end of the stream or a document separator is expected`**
+
+The `dsh-subagent` profile patch is broken. That file starts with a `[]` placeholder, so any
+block appended after it makes the whole file invalid YAML — typically a persona/plugin block
+copied in from another profile. The bridge now says so explicitly; repair it with:
+
+```bash
+node repair-profile.mjs          # backs the file up, then writes the clean template
+```
+
+**`unknown prompt variable "{{cwd}}"`**
+
+The profile patch sets `personaSuffix` to text containing `{{cwd}}`, which the unattended profiles
+do not register (only `provider` and `model` exist there). Either drop the `personaSuffix` line or
+keep the persona in `personaPrefix`, which takes no variables.
+
+**`unknown task id` after restarting the host**
+
+Task ids live in the server process. After a restart, continue by dsh session id instead:
+`subagent_dsh_continue(session_id="session-…", prompt="…")`.

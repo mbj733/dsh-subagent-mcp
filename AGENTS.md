@@ -45,3 +45,12 @@ Expected: an `initialize` result with `serverInfo.name = dsh-subagent-mcp`, then
 
 Commits and package metadata carry only the handle `mbj733`. Do not add real names, personal
 paths, tokens or email addresses to any tracked file.
+
+## Two traps that break this server
+
+- **Never append to `$DSH_HOME/profiles/dsh-subagent/cordis.patch.yml`.** It starts with a `[]`
+  placeholder; a block after it makes the whole file invalid YAML and every run fails with
+  `failed to parse overlay`. Add configuration through a `--patch` overlay instead, or run
+  `node repair-profile.mjs` to reset the file (it keeps a backup).
+- **`personaSuffix` cannot use `{{cwd}}`** in the unattended profiles — only `provider` and `model`
+  are registered there. Put persona text in `personaPrefix`.
