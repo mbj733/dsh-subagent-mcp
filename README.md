@@ -236,7 +236,8 @@ Built and maintained by [@mbj733](https://github.com/mbj733). MIT licensed.
 
 The `dsh-subagent` profile patch is broken. That file starts with a `[]` placeholder, so any
 block appended after it makes the whole file invalid YAML — typically a persona/plugin block
-copied in from another profile. The bridge now says so explicitly; repair it with:
+copied in from another profile. The bridge detects this on every run, keeps a backup and resets the file automatically, so a
+task still succeeds (the footer then says `profile-patch auto-reset`). To do it by hand:
 
 ```bash
 node repair-profile.mjs          # backs the file up, then writes the clean template

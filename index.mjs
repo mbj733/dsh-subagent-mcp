@@ -20,7 +20,7 @@
  * No third-party dependencies: minimal newline-delimited JSON-RPC 2.0.
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -135,6 +135,53 @@ function releaseSlot() {
   else running = Math.max(0, running - 1)
 }
 
+// ------------------------------------------------------------------ profile health
+
+const PROFILE_TEMPLATE = [
+  '# Your patch layer for this dsh profile, applied after every bundle layer:',
+  '# a top-level YAML array of loader patch entries (id-targeted config',
+  '# overrides, disables, and insert lists; `!!js` expressions allowed).',
+  '[]',
+  '',
+].join('\n')
+
+/**
+ * Third-party dsh plugins sometimes append their own block to every profile's
+ * `cordis.patch.yml`. That file starts with a `[]` placeholder, so the append
+ * makes the whole document invalid YAML and every spawn dies with
+ * "failed to parse overlay". Detect that exact shape, keep a backup and put the
+ * clean template back, instead of failing the user's task.
+ */
+function healProfilePatch() {
+  const file = join(DSH_HOME, 'profiles', PROFILE, 'cordis.patch.yml')
+  let text
+  try {
+    text = readFileSync(file, 'utf8')
+  } catch {
+    return null
+  }
+  const lines = text.split(/\r?\n/)
+  const empty = lines.findIndex((line) => line.trim() === '[]')
+  if (empty < 0) return null
+  const trailing = lines.slice(empty + 1).filter((line) => {
+    const t = line.trim()
+    return t !== '' && !t.startsWith('#')
+  })
+  if (trailing.length === 0) return null
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const backup = `${file}.bak-mcp-${stamp}`
+  try {
+    copyFileSync(file, backup)
+    writeFileSync(file, PROFILE_TEMPLATE, 'utf8')
+  } catch (err) {
+    log(`could not heal profile patch: ${err.message}`)
+    return null
+  }
+  log(`profile patch was invalid (block after []); reset, backup at ${backup}`)
+  return backup
+}
+
 // ------------------------------------------------------------------ run
 
 function startRun({ prompt, cwd, sessionId, overlay, timeoutSec, readOnly }) {
@@ -160,6 +207,8 @@ function startRun({ prompt, cwd, sessionId, overlay, timeoutSec, readOnly }) {
     record.queuedMs = waitedMs
 
     const profileDir = join(DSH_HOME, 'profiles', PROFILE)
+    const profileReset = existsSync(profileDir) ? healProfilePatch() : null
+    if (profileReset) record.profileReset = profileReset
     const args = [DSH_BIN, '--profile', PROFILE]
     if (!existsSync(profileDir)) args.push('--from-default-profile', 'headless')
 
@@ -340,6 +389,7 @@ function footer(record) {
     `tokens in ${u.input} / out ${u.output}${u.cacheRead ? ` / cache ${u.cacheRead}` : ''}`,
     m.exit_code !== null ? `exit ${m.exit_code}` : null,
     m.error_code ? `error ${m.error_code}` : null,
+    record.profileReset ? 'profile-patch auto-reset' : null,
   ].filter(Boolean).join(' · ')
 }
 
