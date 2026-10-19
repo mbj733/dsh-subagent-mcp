@@ -1,6 +1,6 @@
 {
   "name": "@mbj733/dsh-subagent-mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "MCP server that lets any MCP host (Codex, Claude Code, ...) delegate a one-shot task to a fresh DeepSeek Harness agent with the user's native configuration.",
   "author": "mbj733 (https://github.com/mbj733)",

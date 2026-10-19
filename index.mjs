@@ -43,7 +43,7 @@ const STATE_DIR = join(HERE, 'state')
 const STATE_FILE = join(STATE_DIR, 'tasks.json')
 const RESULTS_DIR = join(STATE_DIR, 'results')
 
-const SERVER_INFO = { name: 'dsh-subagent-mcp', version: '0.5.0' }
+const SERVER_INFO = { name: 'dsh-subagent-mcp', version: '0.6.0' }
 const PROTOCOL_FALLBACK = '2025-06-18'
 
 const WRITE_TOOL_RE = /^(write|edit|apply_patch|str_replace|multi_edit|create|delete|move|rename)/i
